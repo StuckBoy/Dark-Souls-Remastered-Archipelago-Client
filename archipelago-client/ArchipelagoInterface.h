@@ -14,5 +14,6 @@ public:
 	BOOLEAN isConnected();
 	VOID update();
 	VOID gameFinished();
-	VOID sendDeathLink();
+	//TODO Implement
+	//VOID sendDeathLink();
 };

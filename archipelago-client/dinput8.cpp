@@ -40,8 +40,7 @@ DWORD WINAPI Begin(LPVOID lpParam) {
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 
-	switch (fdwReason)
-	{
+	switch (fdwReason) {
 	case DLL_PROCESS_ATTACH:
 
 		DisableThreadLibraryCalls(hinstDLL);
@@ -57,7 +56,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
 	}
 
 	return TRUE;
-
 }
 
 extern "C" void _DirectInput8Create();

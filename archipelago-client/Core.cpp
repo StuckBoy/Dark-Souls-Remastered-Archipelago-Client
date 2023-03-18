@@ -50,6 +50,7 @@ BOOL CCore::Initialise() {
 	printf_s("Type '/connect {SERVER_IP}:{SERVER_PORT} {SLOT_NAME} [password:{PASSWORD}]' to connect to the room\n\n");
 
 	if (!GameHook->preInitialize()) {
+		//TODO Update with more accurate panic message.
 		Core->Panic("Check if the game version is 1.15 and not 1.15.1, you must use the provided DarkSoulsIII.exe", "Cannot hook the game", FE_InitFailed, 1);
 		return false;
 	}
@@ -96,13 +97,12 @@ VOID CCore::Run() {
 		}
 
 		if (isInit) {
-			GameHook->manageDeathLink();
-
+			//TODO Implement death link
+			//GameHook->manageDeathLink();
 			if (!ItemRandomiser->receivedItemsQueue.empty()) {
 				GameHook->giveItems();
 				pLastReceivedIndex++;
 			}
-
 			if (GameHook->isSoulOfCinderDefeated() && sendGoalStatus) {
 				sendGoalStatus = false;
 				ArchipelagoInterface->gameFinished();
@@ -125,7 +125,6 @@ VOID CCore::Run() {
 */
 VOID CCore::CleanReceivedItemsList() {
 	if (!ItemRandomiser->receivedItemsQueue.empty()) {
-
 		for (int i = 0; i < pLastReceivedIndex; i++) {
 			ItemRandomiser->receivedItemsQueue.pop_back();
 		}
@@ -145,8 +144,7 @@ VOID CCore::Panic(const char* pMessage, const char* pSort, DWORD dError, DWORD d
 	
 	if (dIsFatalError) {
 		sprintf_s(pTitle, "[Archipelago client - Fatal Error]");
-	}
-	else {
+	} else {
 		sprintf_s(pTitle, "[Archipelago client - Error]");
 	};
 
@@ -257,11 +255,11 @@ VOID CCore::ReadConfigFiles() {
 
 VOID CCore::SaveConfigFiles() {
 
-	if (!saveConfigFiles)
+	if (!saveConfigFiles) {
 		return;
+	}
 
 	saveConfigFiles = false;
-
 	
 	std::string outputFolder = "archipelago";
 	std::string filename = Core->pSeed + "_" + Core->pSlotName + ".json";
@@ -274,19 +272,20 @@ VOID CCore::SaveConfigFiles() {
 	json j;
 	j["last_received_index"] = pLastReceivedIndex;
 	
+	/*
+	TODO Implement progressive locations
 	std::map<DWORD, int>::iterator it;
 	for (it = ItemRandomiser->progressiveLocations.begin(); it != ItemRandomiser->progressiveLocations.end(); it++) {
 		char buf[20];
 		sprintf(buf, "0x%x", it->first);
 		j["progressive_locations"][buf] = it->second;
 	}
-
+	*/
 
 	if (CreateDirectory(outputFolder.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
 		std::ofstream outfile(outputFolder + "\\" + filename);
 		outfile << std::setw(4) << j << std::endl;
-	}
-	else {
+	} else {
 		std::ofstream outfile(filename);
 		outfile << std::setw(4) << j << std::endl;
 	}
