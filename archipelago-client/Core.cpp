@@ -16,7 +16,7 @@ VOID CCore::Start() {
 	GameHook = new CGameHook();
 	ItemRandomiser = new CItemRandomiser();
 	AutoEquip = new CAutoEquip();
-	AutoEquip->EquipItem = (fEquipItem*)0x140AFBBB0;
+	AutoEquip->EquipItem = (fEquipItem*)0x140AFBBB0; //TODO What is this value?
 
 	if (!Core->Initialise()) {
 		Core->Panic("Failed to initialise", "...\\Randomiser\\Core\\Core.cpp", FE_InitFailed, 1);
@@ -42,11 +42,11 @@ BOOL CCore::Initialise() {
 	//Setup the client console
 	FILE* fp;
 	AllocConsole();
-	SetConsoleTitleA("Dark Souls III - Archipelago Console");
+	SetConsoleTitleA("Dark Souls Remastered - Archipelago Console");
 	freopen_s(&fp, "CONOUT$", "w", stdout);
 	freopen_s(&fp, "CONIN$", "r", stdin);
 	printf_s("Archipelago client v%s \n", VERSION);
-	printf_s("A new version may or may not be available, please check this link for updates : %s \n\n\n", "https://github.com/Marechal-L/Dark-Souls-III-Archipelago-client/releases");
+	printf_s("A new version may or may not be available, please check this link for updates : %s \n\n\n", "https://github.com/StuckBoy/Dark-Souls-Remastered-Archipelago-Client/releases");
 	printf_s("Type '/connect {SERVER_IP}:{SERVER_PORT} {SLOT_NAME} [password:{PASSWORD}]' to connect to the room\n\n");
 
 	if (!GameHook->preInitialize()) {

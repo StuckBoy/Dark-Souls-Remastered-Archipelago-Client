@@ -18,20 +18,27 @@ public:
 	virtual BOOL updateRuntimeValues();
 	virtual VOID giveItems();
 	virtual VOID itemGib(DWORD itemId);
+	//TODO Determine if a tracker value exists for Lord Souls
 	virtual BOOL isSoulOfCinderDefeated();
-	virtual VOID manageDeathLink();
+	//TODO Implement Additional Features
+	//virtual VOID manageDeathLink();
 	virtual BYTE* findPattern(BYTE* pBaseAddress, BYTE* pbMask, const char* pszMask, size_t nLength);
-	int healthPoint = -1, lastHealthPoint = -1, playTime = -1;
+	//TODO Unused until deathlink
+	//int healthPoint = -1, lastHealthPoint = -1, playTime = -1;
+	//TODO Determine if tracker exists for Lord Souls
 	char soulOfCinderDefeated;
 	SIZE_T healthPointRead, playTimeRead, soulOfCinderDefeatedFlagRead;
 
+	/*
+	TODO Impelement Additional Features
 	DWORD dIsAutoEquip;
 	DWORD dLockEquipSlots;
 	DWORD dIsNoWeaponRequirements;
 	DWORD dIsNoSpellsRequirements;
 	DWORD dIsNoEquipLoadRequirements;
 	DWORD dIsDeathLink;
-	DWORD dEnableDLC;
+	*/
+	//TODO Update with hex for DSR
 	UINT_PTR qLocalPlayer = 0x144740178;
 	UINT_PTR qWorldChrMan = 0x144768E78;
 	UINT_PTR qSprjLuaEvent = 0x14473A9C8;
@@ -48,23 +55,26 @@ private:
 	static uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets);
 	static uintptr_t FindDMAAddyStandalone(uintptr_t ptr, std::vector<unsigned int> offsets);
 	static BOOL Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD dByteLen);
+	/*
+	TODO Implement Additional Features
 	static VOID LockEquipSlots();
 	static VOID RemoveSpellsRequirements();
 	static VOID RemoveEquipLoad();
 	static VOID killThePlayer();
 	BOOL checkIsDlcOwned();
-
-	
+	*/
 	
 	uintptr_t BaseB = -1;
 	uintptr_t GameFlagData = -1;
 	uintptr_t Param = -1;
 	uintptr_t EquipLoad = -1;
 
+	//TODO Update with values for DSR
 	uintptr_t BaseA = -1;
 	const char* baseAPattern = reinterpret_cast<const char*>("\x48\x8B\x05\x00\x00\x00\x00\x48\x85\xc0\x00\x00\x48\x8b\x40\x00\xc3");
 	const char* baseAMask = "xxx????xxx??xxx?x";
 
+	//TODO Update with values for DSR
 	uintptr_t CSDlc = -1;
 	const char* csDlcPattern = reinterpret_cast<const char*>("\x48\x8B\x0d\x00\x00\x00\x00\x48\x85\xc9\x0f\x84\x00\x00\x00\x00\x0f\xba\xe0\x00\x72\x65\x0f\xba\xe8");
 	const char* csDlcMask = "xxx????xxxxx????xxx?xxxxx";
@@ -121,6 +131,7 @@ public:
 	int pBaseId = 0;
 	std::deque<DWORD> receivedItemsQueue = { };
 	std::list<int64_t> checkedLocationsList = { };
+	//TODO Allow Progressive Items & Update Hex Values
 	std::map<DWORD, int> progressiveLocations{
 		{ 0x400003E8, -1 }, //Titanite Shard
 		{ 0x400003E9, -1 }, //Large Titanite Shard
@@ -155,7 +166,6 @@ public:
 		{ 0x40000199, -1 }, //Soul of a Crestfallen Knight
 		{ 0x4000019A, -1 }, //Large Soul of a Crestfallen Knight
 	};
-	bool enablePathOfTheDragon;
 
 private:
 	int isARandomizedLocation(DWORD dItemID);
@@ -163,6 +173,7 @@ private:
 	BOOL isProgressiveLocation(DWORD dItemID);
 };
 
+/*
 class CAutoEquip {
 public:
 	virtual VOID AutoEquipItem(UINT_PTR pItemBuffer, DWORD64 qReturnAddress);
@@ -172,13 +183,16 @@ public:
 	virtual VOID LockUnlockEquipSlots(int iIsUnlock);
 	fEquipItem* EquipItem; //0x140AFBBB0
 };
+*/
 
 struct SEquipBuffer {
 	DWORD dUn1;
 	DWORD dUn2;
 	DWORD dEquipSlot;
+	//TODO ???
 	char unkBytes[0x2C];
 	DWORD dInventorySlot;
+	//TODO Verify if these work for DSR
 	char paddingBytes[0x60];
 };
 
@@ -188,6 +202,7 @@ extern "C" DWORD64 rItemRandomiser;
 extern "C" VOID tItemRandomiser();
 extern "C" VOID fItemRandomiser(UINT_PTR qWorldChrMan, UINT_PTR pItemBuffer, UINT_PTR pItemData, DWORD64 qReturnAddress);
 
+/*
 extern "C" DWORD64 rAutoEquip;
 extern "C" VOID tAutoEquip();
 extern "C" VOID fAutoEquip(UINT_PTR pItemBuffer, DWORD64 pItemData, DWORD64 qReturnAddress);
@@ -195,3 +210,4 @@ extern "C" VOID fAutoEquip(UINT_PTR pItemBuffer, DWORD64 pItemData, DWORD64 qRet
 extern "C" DWORD64 rNoWeaponRequirements;
 extern "C" VOID tNoWeaponRequirements();
 extern "C" VOID fNoWeaponRequirements(DWORD * pRequirementPtr);
+*/

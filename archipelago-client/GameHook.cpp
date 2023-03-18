@@ -14,11 +14,12 @@ extern CArchipelago* ArchipelagoInterface;
 extern CCore* Core;
 
 /*
+* TODO Is process id affected by version?
 * Check if a basic hook is working on this version of the game  
 */
 BOOL CGameHook::preInitialize() {
 	if (MH_Initialize() != MH_OK) return false;
-	return Hook(0x1407BBA80, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
+	return Hook(00001444, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
 }
 
 BOOL CGameHook::initialize() {
@@ -36,6 +37,8 @@ BOOL CGameHook::initialize() {
 	//Inject ItemGibShellcode
 	LPVOID itemGibCodeCave = InjectShellCode((LPVOID)0x13ffe0000, ItemGibShellcode, 93);
 
+	/*
+	TODO Implement additional features
 	if (dIsAutoEquip) { bReturn &= Hook(0x1407BBE92, (DWORD64)&tAutoEquip, &rAutoEquip, 6); }
 	if (dIsNoWeaponRequirements) { bReturn &= Hook(0x140C073B9, (DWORD64)&tNoWeaponRequirements, &rNoWeaponRequirements, 7); }
 	if (dIsNoSpellsRequirements) { RemoveSpellsRequirements(); }
@@ -46,13 +49,14 @@ BOOL CGameHook::initialize() {
 			Core->Panic("You must own both the ASHES OF ARIANDEL and THE RINGED CITY DLC in order to enable the DLC option in Archipelago", "Missing DLC detected", FE_MissingDLC, 1);
 		}
 	}
+	*/
 
 	return bReturn;
 }
 
-VOID CGameHook::manageDeathLink() {
+/*
 
-	
+VOID CGameHook::manageDeathLink() {
 	if (lastHealthPoint == 0 && healthPoint != 0) {	//The player just respawned
 		deathLinkData = false;
 	} else if (deathLinkData && lastHealthPoint != 0 && healthPoint != 0 ) { //The player received a deathLink
@@ -69,42 +73,39 @@ VOID CGameHook::manageDeathLink() {
 VOID CGameHook::killThePlayer() {
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
+	//TODO Modify for DSR
 	std::vector<unsigned int> hpOffsets = { 0x80, 0x1F90, 0x18, 0xD8 };
 	uintptr_t healthPointAddr = FindExecutableAddress(0x4768E78, hpOffsets); //BaseB + HP Offsets
 
 	int newHP = 0;
 	WriteProcessMemory(hProcess, (BYTE*)healthPointAddr, &newHP, sizeof(newHP), nullptr);
 }
+*/
 
 BOOL CGameHook::updateRuntimeValues() {
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
+	/*
+	TODO Unecessary until deathlink
 	std::vector<unsigned int> hpOffsets = { 0x80, 0x1F90, 0x18, 0xD8 };
 	uintptr_t healthPointAddr = FindExecutableAddress(0x4768E78, hpOffsets); //BaseB + HP Offsets
+	*/
 
 	std::vector<unsigned int> playTimeOffsets = { 0xA4 };
+	//TODO Update with DSR playTimeOffset (If an offset is necessary)
 	uintptr_t playTimeAddr = FindExecutableAddress(0x4740178, playTimeOffsets); //BaseA + PlayTime Offsets	
 
-	std::vector<unsigned int> soulOfCinderDefeatedFlagOffsets = { 0x00, 0x5F67 };
+	//TODO Is there a tracking value for Lord Souls collected?
+	//std::vector<unsigned int> soulOfCinderDefeatedFlagOffsets = { 0x00, 0x5F67 };
 	uintptr_t soulOfCinderDefeatedFlagAddress = FindExecutableAddress(0x473BE28, soulOfCinderDefeatedFlagOffsets); //GameFlagData + Sould of Cinder defeated flag Offsets	
 
-	lastHealthPoint = healthPoint;
+	//lastHealthPoint = healthPoint;
 
-	ReadProcessMemory(hProcess, (BYTE*)healthPointAddr, &healthPoint, sizeof(healthPoint), &healthPointRead);
+	//ReadProcessMemory(hProcess, (BYTE*)healthPointAddr, &healthPoint, sizeof(healthPoint), &healthPointRead);
 	ReadProcessMemory(hProcess, (BYTE*)playTimeAddr, &playTime, sizeof(playTime), &playTimeRead);
-	ReadProcessMemory(hProcess, (BYTE*)soulOfCinderDefeatedFlagAddress, &soulOfCinderDefeated, sizeof(soulOfCinderDefeated), &soulOfCinderDefeatedFlagRead);
-
-	//Enable the Path of The Dragon Gesture manually when receiving the item
-	if (ItemRandomiser->enablePathOfTheDragon) {
-		ItemRandomiser->enablePathOfTheDragon = false;
-
-		std::vector<unsigned int> pathOfDragonOffsets = { 0x10, 0x7B8, 0x90 };
-		uintptr_t gestureAddr = FindExecutableAddress(0x4740178, pathOfDragonOffsets); //BaseA + Path of the dragon Offsets
-
-		char gestureUnlocked = 0x43;
-		WriteProcessMemory(hProcess, (BYTE*)gestureAddr, &gestureUnlocked, sizeof(gestureUnlocked), nullptr);
-	}
+	//TODO Determine if a Lord Soul counter exists.
+	//ReadProcessMemory(hProcess, (BYTE*)soulOfCinderDefeatedFlagAddress, &soulOfCinderDefeated, sizeof(soulOfCinderDefeated), &soulOfCinderDefeatedFlagRead);
 }
 
 VOID CGameHook::giveItems() {
@@ -114,10 +115,13 @@ VOID CGameHook::giveItems() {
 	}
 }
 
+/*
+TODO Is there a tracking value for Lord Souls collected?
 BOOL CGameHook::isSoulOfCinderDefeated() {
 	constexpr std::uint8_t mask7{ 0b1000'0000 };
 	return soulOfCinderDefeatedFlagRead != 0 && (int)(soulOfCinderDefeated & mask7) == 128;
 }
+*/
 
 VOID CGameHook::itemGib(DWORD itemId) {
 
@@ -135,16 +139,19 @@ VOID CGameHook::itemGib(DWORD itemId) {
 	WriteProcessMemory(hProcess, (BYTE*)gibItem, &newMemory, sizeof(newMemory), nullptr);
 
 	typedef int func(void);
-	func* f = (func*)0x13ffe0000;
+	func* f = (func*)0x13ffe0000; //TODO What is this value? Cave
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)f, NULL, NULL, NULL);
 }
 
 BOOL CGameHook::Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD dByteLen) {
-
 	MH_STATUS status = MH_CreateHook((LPVOID)qAddress, (LPVOID)qDetour, 0);
-	if (status != MH_OK) return false;
-	if (MH_EnableHook((LPVOID)qAddress) != MH_OK) return false;
-
+	if (status != MH_OK) {
+		return false;
+	}
+	if (MH_EnableHook((LPVOID)qAddress) != MH_OK) {
+		return false;
+	}
+	
 	*pReturn = (qAddress + dByteLen);
 
 	return true;
@@ -154,7 +161,9 @@ BOOL CGameHook::replaceShellCodeAddress(BYTE *shellcode, int shellCodeOffset, LP
 
 	char* addressArray = (char*)malloc(sizeof(void*));
 	ConvertToLittleEndianByteArray((uintptr_t)codeCave + codeCaveOffset, addressArray);
-	if (addressArray == 0) { return false; }
+	if (addressArray == 0) {
+		return false;
+	}
 	memcpy(shellcode + shellCodeOffset, addressArray, length);
 	free(addressArray);
 
@@ -163,6 +172,7 @@ BOOL CGameHook::replaceShellCodeAddress(BYTE *shellcode, int shellCodeOffset, LP
 
 LPVOID CGameHook::InjectShellCode(LPVOID address, BYTE* shellCode, size_t len) {
 	
+	//TODO Is this hex value still accurate?
 	LPVOID pCodeCave = VirtualAlloc(address, 0x3000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!pCodeCave) {
 		return nullptr;
@@ -218,19 +228,18 @@ uintptr_t CGameHook::FindDMAAddyStandalone(uintptr_t ptr, std::vector<unsigned i
 }
 
 uintptr_t CGameHook::GetModuleBaseAddress() {
-	const char* lpModuleName = "DarkSoulsIII.exe";
+	const char* lpModuleName = "DarkSoulsRemastered.exe";
 	DWORD procId = GetCurrentProcessId();
 
 	MODULEENTRY32 lpModuleEntry = { 0 };
 	HANDLE hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, procId);
-	if (!hSnapShot)
+	if (!hSnapShot) {
 		return NULL;
+	}
 	lpModuleEntry.dwSize = sizeof(lpModuleEntry);
 	BOOL bModule = Module32First(hSnapShot, &lpModuleEntry);
-	while (bModule)
-	{
-		if (!strcmp(lpModuleEntry.szModule, lpModuleName))
-		{
+	while (bModule) {
+		if (!strcmp(lpModuleEntry.szModule, lpModuleName)) {
 			CloseHandle(hSnapShot);
 			return (uintptr_t)lpModuleEntry.modBaseAddr;
 		}
@@ -240,6 +249,7 @@ uintptr_t CGameHook::GetModuleBaseAddress() {
 	return NULL;
 }
 
+/*
 VOID CGameHook::LockEquipSlots() {
 
 	DWORD dOldProtect = 0;
@@ -292,8 +302,10 @@ VOID CGameHook::RemoveEquipLoad() {
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
 	std::vector<unsigned int> offsets = { };
+	//TODO Update with DSR Equip Load hex
 	uintptr_t equipLoadAddr = FindExecutableAddress(0x581FCD, offsets); //EquipLoad 
 	
+	//TODO Determine correct hex for DSR
 	BYTE newValue[4] = {0x0F, (BYTE)0x57, 0xF6, 0x90};
 	WriteProcessMemory(hProcess, (BYTE*)equipLoadAddr, &newValue, sizeof(BYTE) * 4, nullptr);
 
@@ -324,40 +336,4 @@ BYTE* CGameHook::findPattern(BYTE* pBaseAddress, BYTE* pbMask, const char* pszMa
 
 	return nullptr;
 }
-
-BOOL CGameHook::checkIsDlcOwned() {
-	BOOL ret = false;
-
-	int executableSize = 100093 * 1000;
-	BYTE* patternAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)csDlcPattern, csDlcMask, executableSize);
-	if (patternAddr != nullptr) {
-		DWORD processId = GetCurrentProcessId();
-		HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
-
-		int thirdInteger = -1;
-		SIZE_T flag;
-		ReadProcessMemory(hProcess, (BYTE*)(patternAddr + 3), &thirdInteger, sizeof(thirdInteger), &flag);
-		patternAddr = patternAddr + thirdInteger + 7;
-		CSDlc = (uintptr_t)patternAddr;
-
-		std::vector<unsigned int> DLC_1_Offsets = { 0x11 };
-		uintptr_t dlc_1_addr = FindDMAAddyStandalone((uintptr_t)CSDlc, DLC_1_Offsets);
-
-		std::vector<unsigned int> DLC_2_Offsets = { 0x12 };
-		uintptr_t dlc_2_addr = FindDMAAddyStandalone((uintptr_t)CSDlc, DLC_2_Offsets);
-
-		BYTE isDlc_1 = 0x05;
-		ReadProcessMemory(hProcess, (BYTE*)dlc_1_addr, &isDlc_1, sizeof(BYTE), nullptr);
-
-		BYTE isDlc_2 = 0x05;
-		ReadProcessMemory(hProcess, (BYTE*)dlc_2_addr, &isDlc_2, sizeof(BYTE), nullptr);
-
-		if (isDlc_1 == 1 && isDlc_2 == 1) {
-			ret = true;
-		} else {
-			printf("Missing DLC!\n DLC #1 : %d , DLC #2 : %d\n", isDlc_1, isDlc_2);
-		}
-	}
-
-	return ret;
-}
+*/
