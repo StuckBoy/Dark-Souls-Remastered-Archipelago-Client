@@ -200,6 +200,7 @@ VOID CAutoEquip::LockUnlockEquipSlots(int iIsUnlock) {
 	return;
 };
 
+//TODO Replace with DSR equivalents (oof)
 extern DWORD pHelmetList[110]{
 
 	0x14ADD0A0,
@@ -313,6 +314,7 @@ extern DWORD pHelmetList[110]{
 
 };		  //All in-game headwear
 
+//TODO Replace with DSR equivalents (oof)
 extern DWORD pBodyList[105]{
 
 	0x14B575A8,
@@ -422,6 +424,7 @@ extern DWORD pBodyList[105]{
 
 };		  //All in-game chestpieces
 
+//TODO Replace with DSR equivalents (oof)
 extern DWORD pHandsList[100]{
 
 	0x149E9630,
@@ -518,6 +521,7 @@ extern DWORD pHandsList[100]{
 	0x00000000,
 };
 
+//TODO Replace with DSR equivalents (oof)
 extern DWORD pLegsList[105]{
 
 	0x1121F678,

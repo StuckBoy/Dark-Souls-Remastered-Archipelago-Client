@@ -23,6 +23,8 @@ VOID CCore::Start() {
 		int3
 	};
 
+	printf_s("Here we go!\n");
+
 	while (true) {
 		Core->Run();
 		Sleep(RUN_SLEEP);
@@ -46,17 +48,18 @@ BOOL CCore::Initialise() {
 	freopen_s(&fp, "CONOUT$", "w", stdout);
 	freopen_s(&fp, "CONIN$", "r", stdin);
 	printf_s("Archipelago client v%s \n", VERSION);
+	//TODO Can a fork even host releases?
 	printf_s("A new version may or may not be available, please check this link for updates : %s \n\n\n", "https://github.com/StuckBoy/Dark-Souls-Remastered-Archipelago-Client/releases");
 	printf_s("Type '/connect {SERVER_IP}:{SERVER_PORT} {SLOT_NAME} [password:{PASSWORD}]' to connect to the room\n\n");
 
 	if (!GameHook->preInitialize()) {
-		//TODO Update with more accurate panic message.
-		Core->Panic("Check if the game version is 1.15 and not 1.15.1, you must use the provided DarkSoulsIII.exe", "Cannot hook the game", FE_InitFailed, 1);
+		//TODO More descriptive error
+		Core->Panic("Please correct this issue.", "Cannot hook the game", FE_InitFailed, 1);
 		return false;
 	}
 
 	if (CheckOldApFile()) {
-		printf_s("The AP.json file is not supported in this version, make sure to finish your previous seed on version 1.2 or use this version on the new Archipelago server\n\n");
+		printf_s("The AP.json file is not supported in this version, make sure to finish your previous seed on version 0.0.1 or use this version on the new Archipelago server\n\n");
 	}
 
 	//Start command prompt
@@ -80,8 +83,8 @@ VOID CCore::Run() {
 	ArchipelagoInterface->update();
 	GameHook->updateRuntimeValues();
 
-	if(GameHook->healthPointRead != 0 && GameHook->playTimeRead !=0) {
-
+	if (GameHook->healthPointRead != 0 && GameHook->playTimeRead !=0) {
+		//TODO Figure out why running server and game locally causes loopback
 		if (!isInit && ArchipelagoInterface->isConnected() && initProtectionDelay <= 0) {
 			ReadConfigFiles();
 			CleanReceivedItemsList();
@@ -92,22 +95,21 @@ VOID CCore::Run() {
 				Core->Panic("Failed to initialise GameHook", "...\\Randomiser\\Core\\Core.cpp", FE_InitFailed, 1);
 				int3
 			}
-			printf("Mod initialized successfully\n");
 			isInit = true;
 		}
 
 		if (isInit) {
-			//TODO Implement death link
-			//GameHook->manageDeathLink();
 			if (!ItemRandomiser->receivedItemsQueue.empty()) {
 				GameHook->giveItems();
 				pLastReceivedIndex++;
 			}
-			if (GameHook->isSoulOfCinderDefeated() && sendGoalStatus) {
+			//TODO Remove comment once method has been updated
+			if (/*GameHook->isLordOfCinderDefeated() && */sendGoalStatus) {
 				sendGoalStatus = false;
 				ArchipelagoInterface->gameFinished();
 			}
-		} else {
+		}
+		else {
 			int secondsRemaining = (RUN_SLEEP / 1000) * initProtectionDelay;
 			printf("The mod will be initialized in %d seconds\n", secondsRemaining);
 			initProtectionDelay--;
@@ -130,8 +132,6 @@ VOID CCore::CleanReceivedItemsList() {
 		}
 	}
 }
-
-
 
 VOID CCore::Panic(const char* pMessage, const char* pSort, DWORD dError, DWORD dIsFatalError) {
 
@@ -185,7 +185,6 @@ VOID CCore::InputCommand() {
 			std::cout << "/save\n";
 			Core->saveConfigFiles = true;
 		}
-			
 #endif
 
 		if (line.find("/connect ") == 0) {
@@ -200,8 +199,7 @@ VOID CCore::InputCommand() {
 				std::string password = "";
 				std::cout << address << " - " << slotName << "\n";
 				Core->pSlotName = slotName;
-				if (passwordIndex != std::string::npos)
-				{
+				if (passwordIndex != std::string::npos)				{
 					password = param.substr(passwordIndex + 9);
 				}
 				Core->pPassword = password;
@@ -229,7 +227,6 @@ VOID CCore::ReadConfigFiles() {
 		//Check outside the folder
 		std::ifstream gameFile(filename);
 		if (!gameFile.good()) {
-			
 			//Missing session file, that's probably a new game
 			return;
 		}
@@ -244,11 +241,6 @@ VOID CCore::ReadConfigFiles() {
 	gameFile >> k;
 	k.at("last_received_index").get_to(pLastReceivedIndex);
 	std::map<DWORD, int>::iterator it;
-	for (it = ItemRandomiser->progressiveLocations.begin(); it != ItemRandomiser->progressiveLocations.end(); it++) {
-		char buf[10];
-		sprintf(buf, "0x%x", it->first);
-		k.at("progressive_locations").at(buf).get_to(ItemRandomiser->progressiveLocations[it->first]);
-	}
 
 	gameFile.close();
 };
@@ -271,16 +263,6 @@ VOID CCore::SaveConfigFiles() {
 
 	json j;
 	j["last_received_index"] = pLastReceivedIndex;
-	
-	/*
-	TODO Implement progressive locations
-	std::map<DWORD, int>::iterator it;
-	for (it = ItemRandomiser->progressiveLocations.begin(); it != ItemRandomiser->progressiveLocations.end(); it++) {
-		char buf[20];
-		sprintf(buf, "0x%x", it->first);
-		j["progressive_locations"][buf] = it->second;
-	}
-	*/
 
 	if (CreateDirectory(outputFolder.c_str(), NULL) || ERROR_ALREADY_EXISTS == GetLastError()) {
 		std::ofstream outfile(outputFolder + "\\" + filename);

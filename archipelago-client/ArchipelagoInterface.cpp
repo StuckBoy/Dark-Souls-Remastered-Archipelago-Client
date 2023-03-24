@@ -37,31 +37,50 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		// read the archipelago slot data
 
 		//Mandatory values
+
+		if (!data.contains("locationsId")) {
+			Core->Panic("Missing locations Id!", "Correct this issue before trying again.", 0, 1);
+		}
+		else if (!data.contains("locationsAddress")) {
+			Core->Panic("Missing locations address!", "Correct this issue before trying again.", 0, 1);
+		}
+		//TODO Why is this missing? Are we asking for something that doesn't exist yet?
+		/*
+		else if (!data.contains("locationsTarget")) {
+			Core->Panic("Missing locations target!", "Correct this issue before trying again.", 0, 1);
+		}
+		*/
+		else if (!data.contains("itemsId")) {
+			Core->Panic("Missing item ids!", "Correct this issue before trying again.", 0, 1);
+		}
+		else if (!data.contains("itemsAddress")) {
+			Core->Panic("Missing items address!", "Correct this issue before trying again.", 0, 1);
+		}
+		else if (!data.contains("base_id")) {
+			Core->Panic("Missing base id!", "Correct this issue before trying again.", 0, 1);
+		}
+		else if (!data.contains("seed")) {
+			Core->Panic("Missing seed!", "Correct this issue before trying again.", 0, 1);
+		}
+		else if (!data.contains("slot")) {
+			Core->Panic("Missing slot!", "Correct this issue before trying again.", 0, 1);
+		}
+		//TODO Remove test stuff
+		/*
 		if (!data.contains("locationsId") || !data.contains("locationsAddress") || !data.contains("locationsTarget") || !data.contains("itemsId")
 			|| !data.contains("itemsAddress") || !data.contains("base_id") || !data.contains("seed") || !data.contains("slot")) {
 			Core->Panic("Please check the following values : [locationsId], [locationsAddress], [locationsTarget], [itemsId], [itemsAddress], [base_id], [seed] and [slot]", "One of the mandatory values is missing in the slot data", AP_MissingValue, 1);
 		}
+		*/
 
 		data.at("locationsId").get_to(ItemRandomiser->pLocationsId);
 		data.at("locationsAddress").get_to(ItemRandomiser->pLocationsAddress);
-		data.at("locationsTarget").get_to(ItemRandomiser->pLocationsTarget);
+		//data.at("locationsTarget").get_to(ItemRandomiser->pLocationsTarget);
 		data.at("itemsId").get_to(ItemRandomiser->pItemsId);
 		data.at("itemsAddress").get_to(ItemRandomiser->pItemsAddress);
 		data.at("base_id").get_to(ItemRandomiser->pBaseId);
 		data.at("seed").get_to(Core->pSeed);
 		data.at("slot").get_to(Core->pSlotName);
-
-		/*
-		TODO Implement additional features
-		if (data.contains("options")) {
-			(data.at("options").contains("auto_equip")) ? (data.at("options").at("auto_equip").get_to(GameHook->dIsAutoEquip)) : GameHook->dIsAutoEquip = false;
-			(data.at("options").contains("lock_equip")) ? (data.at("options").at("lock_equip").get_to(GameHook->dLockEquipSlots)) : GameHook->dLockEquipSlots = false;
-			(data.at("options").contains("no_weapon_requirements")) ? (data.at("options").at("no_weapon_requirements").get_to(GameHook->dIsNoWeaponRequirements)) : GameHook->dIsNoWeaponRequirements = false;
-			(data.at("options").contains("death_link")) ? (data.at("options").at("death_link").get_to(GameHook->dIsDeathLink)) : GameHook->dIsDeathLink = false;
-			(data.at("options").contains("no_spell_requirements")) ? (data.at("options").at("no_spell_requirements").get_to(GameHook->dIsNoSpellsRequirements)) : GameHook->dIsNoSpellsRequirements = false;
-			(data.at("options").contains("no_equip_load")) ? (data.at("options").at("no_equip_load").get_to(GameHook->dIsNoEquipLoadRequirements)) : GameHook->dIsNoEquipLoadRequirements = false;
-		}
-		*/
 
 		std::list<std::string> tags;
 		/*
@@ -92,7 +111,7 @@ BOOL CArchipelago::Initialise(std::string URI) {
 			tags.push_back("DeathLink");
 		}
 		*/
-		ap->ConnectSlot(Core->pSlotName, Core->pPassword, 5, tags, { 0,3,7 });
+		ap->ConnectSlot(Core->pSlotName, Core->pPassword, 5, tags, { 0,3,8 });
 		});
 
 	ap->set_items_received_handler([](const std::list<APClient::NetworkItem>& items) {
