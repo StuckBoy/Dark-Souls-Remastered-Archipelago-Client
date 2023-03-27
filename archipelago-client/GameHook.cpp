@@ -85,36 +85,57 @@ BOOL CGameHook::updateRuntimeValues() {
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
 	int executableSize = 49108 * 1000;
-	BYTE* patternAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)baseBPattern, baseBMask, executableSize);
+	BYTE* patternBAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)baseBPattern, baseBMask, executableSize);
 	int thirdInteger = -1;
-	ReadProcessMemory(hProcess, (BYTE*)(patternAddr + 3), &thirdInteger, sizeof(thirdInteger), 0);
-	BYTE* finalAddr = patternAddr + thirdInteger + 7;
-	BaseB = (uintptr_t)finalAddr;
-	//Returned 141C8A530
-	//printf("%" PRIxPTR "\n", BaseB);
+	ReadProcessMemory(hProcess, (BYTE*)(patternBAddr + 3), &thirdInteger, sizeof(thirdInteger), 0);
+	BYTE* finalBAddr = patternBAddr + thirdInteger + 7;
+	BaseB = (uintptr_t)finalBAddr;
+	BYTE* patternXAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)baseXPattern, baseXMask, executableSize);
+	thirdInteger = -1;
+	ReadProcessMemory(hProcess, (BYTE*)(patternBAddr + 3), &thirdInteger, sizeof(thirdInteger), 0);
+	BYTE* finalXAddr = patternXAddr + thirdInteger + 7;
+	BaseX = (uintptr_t)finalXAddr;
+	//Returned 141C8A530 for BaseB
+	//Returned 141C77E50 for BaseX
+#if DEBUG
+	printf("%" PRIxPTR "\n", BaseX);
+#endif
 
 	//Read value of health to determine if the character is alive
-	std::vector<unsigned int> hpOffsets = { 0x00, 0x10, 0x14 };
-	uintptr_t healthPointAddr = FindExecutableAddress(0x41C8A530, hpOffsets); //BaseB + HP Offsets
+	std::vector<unsigned int> hpOffsets = { 0x68, 0x3E8 };
+	uintptr_t healthPointAddr = FindDMAAddyStandalone(0x141C77E50, hpOffsets); //BaseX + HP Offsets
 
 	//Read value of play time to know that a character is active
-	std::vector<unsigned int> playTimeOffsets = { 0x00, 0xA4 };
-	uintptr_t playTimeAddr = FindExecutableAddress(0x41C8A530, playTimeOffsets); //BaseB + PlayTime Offsets	
+	std::vector<unsigned int> playTimeOffsets = { 0xA4 };
+	uintptr_t playTimeAddr = FindDMAAddyStandalone(0x141C8A530, playTimeOffsets); //BaseB + PlayTime Offsets	
 
-	//TODO Locate Gwyn's defeat flag or ending achieved, offsets and then update
+	/*
+	TODO Options are: 
+	Clear state(none, good, bad) with offset(s) ( 0x78 )
+	Clear count with offset(s) ( 0x7C )
+	Both use BaseB
+	*/
 	//std::vector<unsigned int> lordOfCinderDefeatedFlagOffsets = { 0x00, 0x5F67 };
 	//uintptr_t soulOfCinderDefeatedFlagAddress = FindExecutableAddress(0x473BE28, lordOfCinderDefeatedFlagOffsets); //GameFlagData + Lord of Cinder defeated flag Offsets	
 
-	//TODO Can this be used to track logic?
-	//std::vector<unsigned int> bellsOfAwakeningRungFlagOffsets = { };
-	//uintptr_t bellsOfAwakeningRungFlagAddress = FindExecutableAddress();
+	printf_s("\nReading process for Clear Count\n");
+	std::vector<unsigned int> clearCountFlagOffsets = { 0x78 };
+	uintptr_t clearCountAddr = FindDMAAddyStandalone(0x141C8A530, clearCountFlagOffsets); //BaseB + PlayTime Offsets	
 
 	ReadProcessMemory(hProcess, (BYTE*)healthPointAddr, &healthPoint, sizeof(healthPoint), &healthPointRead);
 	ReadProcessMemory(hProcess, (BYTE*)playTimeAddr, &playTime, sizeof(playTime), &playTimeRead);
-	//TODO Locate Gwyn's defeat or ending achieved flag and then uncomment
-	//ReadProcessMemory(hProcess, (BYTE*)lordOfCinderDefeatedFlagAddress, &lordOfCinderDefeated, sizeof(lordOfCinderDefeated), &lordOfCinderDefeatedFlagRead);
+	//TODO There's clear state and clear count, whichever is easier to verify
+	ReadProcessMemory(hProcess, (BYTE*)clearCountAddr, &clearCount, sizeof(clearCount), &clearCountFlagRead);
 
 	lastHealthPoint = healthPoint;
+
+#if DEBUG
+	printf_s("Your health is apparently: %zu\n", healthPointRead);
+	printf_s("Your play time is apparently: %zu\n", playTimeRead);
+#endif
+	printf_s("Your health is apparently: %d\n", healthPoint);
+	printf_s("Your play time is apparently: %d\n", playTime);
+	printf_s("Your clear count is apparently: %c\n\n", clearCount);
 }
 
 VOID CGameHook::giveItems() {
@@ -124,14 +145,14 @@ VOID CGameHook::giveItems() {
 	}
 }
 
-BOOL CGameHook::isLordOfCinderDefeated() {
+BOOL CGameHook::endingAchieved() {
 	/*
 	TODO Update once either flag location for Gwyn's defeat or an ending achieved flag has been found
-	
 	constexpr std::uint8_t mask7{ 0b1000'0000 };
 	return lordOfCinderDefeatedFlagRead != 0 && (int)(lordOfCinderDefeated & mask7) == 128;
 	*/
-	return false;
+	constexpr std::uint8_t mask7{ 0b1000'0000 };
+	return clearCountFlagRead != 0 && (int)(clearCount & mask7) == 128;
 }
 
 VOID CGameHook::itemGib(DWORD itemId) {
@@ -195,21 +216,20 @@ void CGameHook::ConvertToLittleEndianByteArray(uintptr_t address, char* output) 
 
 
 uintptr_t CGameHook::FindExecutableAddress(uintptr_t ptrOffset, std::vector<unsigned int> offsets) {
-	//Find "DarkSoulsRemastered.exe" process ID
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
-	//uintptr_t moduleBase = GetModuleBaseAddress();
-	//uintptr_t dynamicPtrAddr = moduleBase + ptrOffset;
-	//return FindDMAAddy(hProcess, dynamicPtrAddr, offsets);
-	
-	return FindDMAAddy(hProcess, ptrOffset, offsets);
+	uintptr_t moduleBase = GetModuleBaseAddress();
+	uintptr_t dynamicPtrAddr = moduleBase + ptrOffset;
+
+	return FindDMAAddy(hProcess, dynamicPtrAddr, offsets);
 }
 
 uintptr_t CGameHook::FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets) {
 
 	uintptr_t addr = ptr;
 	for (unsigned int i = 0; i < offsets.size(); ++i) {
+
 		ReadProcessMemory(hProc, (BYTE*)addr, &addr, sizeof(addr), 0);
 		addr += offsets[i];
 	}

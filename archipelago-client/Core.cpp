@@ -23,8 +23,6 @@ VOID CCore::Start() {
 		int3
 	};
 
-	printf_s("Here we go!\n");
-
 	while (true) {
 		Core->Run();
 		Sleep(RUN_SLEEP);
@@ -272,5 +270,4 @@ VOID CCore::SaveConfigFiles() {
 		outfile << std::setw(4) << j << std::endl;
 	}
 }
-
 

@@ -18,15 +18,13 @@ public:
 	virtual BOOL updateRuntimeValues();
 	virtual VOID giveItems();
 	virtual VOID itemGib(DWORD itemId);
-	//TODO Locate Gwyn's defeat flag/Ending achieved flag
-	virtual BOOL isLordOfCinderDefeated();
+	virtual BOOL endingAchieved();
 	//TODO Implement Additional Features
 	//virtual VOID manageDeathLink();
 	virtual BYTE* findPattern(BYTE* pBaseAddress, BYTE* pbMask, const char* pszMask, size_t nLength);
 	int healthPoint = -1, lastHealthPoint = -1, playTime = -1;
-	//TODO Determine if tracker exists for Lord Souls
-	char lordOfCinderDefeated;
-	SIZE_T healthPointRead, playTimeRead, lordOfCinderDefeatedFlagRead;
+	char clearCount;
+	SIZE_T healthPointRead, playTimeRead, clearCountFlagRead;
 
 
 	//TODO Update with addressed for DSR?
@@ -58,6 +56,11 @@ private:
 	const char* baseBPattern = reinterpret_cast<const char*>("\x48\x8B\x05\x00\x00\x00\x00\x48\x85\xC0\x00\x00\xF3\x0F\x58\x80\xAC\x00\x00\x00");
 	const char* baseBMask = "xxx????xxx??xxxxxxxx";
 
+	uintptr_t BaseX = -1;
+	const char* baseXPattern = reinterpret_cast<const char*>("\x48\x8B\x05\x00\x00\x00\x00\x48\x8B\x48\x68\x48\x85\xC9\x0F\x84\x00\x00\x00\x00\x48\x39\x5E\x10\x0F\x84\x00\x00\x00\x00\x48");
+	const char* baseXMask = "xxx????xxxxxxxxx????xxxxxx????x";
+
+	//TODO Is BaseA even needed for DSR?
 	//TODO Is BaseA even needed for DSR?
 	uintptr_t BaseA = -1;
 	const char* baseAPattern = reinterpret_cast<const char*>("\x48\x89\x05\x00\x00\x00\x00\x45\x33\xED\x48\x8B\xF1\x48\x85\xC0");
