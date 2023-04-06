@@ -4,12 +4,10 @@ Dark Souls Remastered client made for Archipelago multiworld randomizer. See [ar
 
 ## How to install
 
-This mod works with a single dll file but we also provide a way to downpatch the game.
-
 - Download the lastest version available [here](https://github.com/Marechal-L/Dark-Souls-III-Archipelago-client/releases).
-- Extract DSR-Archipelago.zip into your game folder.
-- Generate a game using Archipelago.
-- Launch game by running "DSR-Archipelago.bat"
+- Extract d8input.dll into your Dark Souls Remastered install folder
+- Generate a game using Archipelago
+- Launch the game through Steam
 
 ## Commands
 - All client commands start with "/" and archipelago commands start with "!" :
@@ -25,6 +23,6 @@ installing the latest Microsoft Visual C++ Redistributable version could fix it 
 
 ## Credits
 https://github.com/LukeYui/DS3-Item-Randomiser-OS by LukeYui  
-https://github.com/black-sliver/apclientpp by black-sliver
+https://github.com/black-sliver/apclientpp by black-sliver  
 https://github.com/Marechal-L/Dark-Souls-III-Archipelago-client by Marechal-L
 
