@@ -82,14 +82,15 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		data.at("seed").get_to(Core->pSeed);
 		data.at("slot").get_to(Core->pSlotName);
 
+		if (data.contains("options")) {
+			(data.at("options").contains("death_link")) ? (data.at("options").at("death_link").get_to(GameHook->dIsDeathLink)) : GameHook->dIsDeathLink = false;
+		}
+
 		std::list<std::string> tags;
-		/*
-		TODO Implement death link 
 		if (GameHook->dIsDeathLink) { 
 			tags.push_back("DeathLink"); 
 			ap->ConnectUpdate(false, 1, true, tags);
 		}
-		*/
 
 		});
 	ap->set_slot_disconnected_handler([]() {
@@ -105,12 +106,9 @@ BOOL CArchipelago::Initialise(std::string URI) {
 
 	ap->set_room_info_handler([]() {
 		std::list<std::string> tags;
-		/*
-		TODO Implement death link
 		if (GameHook->dIsDeathLink) {
 			tags.push_back("DeathLink");
 		}
-		*/
 		ap->ConnectSlot(Core->pSlotName, Core->pPassword, 5, tags, { 0,3,8 });
 		});
 
@@ -171,8 +169,6 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		});
 
 	ap->set_bounced_handler([](const json& cmd) {
-		/*
-		Implement death link
 		if (GameHook->dIsDeathLink) {
 			auto tagsIt = cmd.find("tags");
 			auto dataIt = cmd.find("data");
@@ -193,7 +189,6 @@ BOOL CArchipelago::Initialise(std::string URI) {
 				}
 			}
 		}
-		*/
 		});
 	
 	return true;
@@ -223,8 +218,6 @@ VOID CArchipelago::gameFinished() {
 	if (ap) ap->StatusUpdate(APClient::ClientStatus::GOAL);
 }
 
-/*
-TODO Implement death link
 VOID CArchipelago::sendDeathLink() {
 	if (!ap || !GameHook->dIsDeathLink) return;
 
@@ -232,9 +225,8 @@ VOID CArchipelago::sendDeathLink() {
 
 	json data{
 		{"time", ap->get_server_time()},
-		{"cause", "Dark Souls III."},
+		{"cause", "Dark Souls Remastered."},
 		{"source", ap->get_slot()},
 	};
 	ap->Bounce(data, {}, {}, { "DeathLink" });
 }
-*/

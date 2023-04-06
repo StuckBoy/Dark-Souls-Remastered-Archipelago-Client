@@ -81,8 +81,7 @@ VOID CCore::Run() {
 	ArchipelagoInterface->update();
 	GameHook->updateRuntimeValues();
 
-	if (GameHook->healthPointRead != 0 && GameHook->playTimeRead !=0) {
-		//TODO Figure out why running server and game locally causes loopback
+	if (GameHook->healthPointRead != 0 && GameHook->playTimeRead != 0) {
 		if (!isInit && ArchipelagoInterface->isConnected() && initProtectionDelay <= 0) {
 			ReadConfigFiles();
 			CleanReceivedItemsList();
@@ -97,6 +96,7 @@ VOID CCore::Run() {
 		}
 
 		if (isInit) {
+			GameHook->manageDeathLink();
 			if (!ItemRandomiser->receivedItemsQueue.empty()) {
 				GameHook->giveItems();
 				pLastReceivedIndex++;

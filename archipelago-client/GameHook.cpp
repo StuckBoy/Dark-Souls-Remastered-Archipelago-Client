@@ -52,14 +52,12 @@ BOOL CGameHook::initialize() {
 	return bReturn;
 }
 
-/*
-TODO Support deathlink
 VOID CGameHook::manageDeathLink() {
 	if (lastHealthPoint == 0 && healthPoint != 0) {	//The player just respawned
 		deathLinkData = false;
 	} else if (deathLinkData && lastHealthPoint != 0 && healthPoint != 0 ) { //The player received a deathLink
 		killThePlayer();
-	} else if(lastHealthPoint != 0 && healthPoint == 0) { //The player just died, ignore the deathLink if received
+	} else if (lastHealthPoint != 0 && healthPoint == 0) { //The player just died, ignore the deathLink if received
 		if (deathLinkData) {
 			deathLinkData = false;
 			return;
@@ -71,14 +69,12 @@ VOID CGameHook::manageDeathLink() {
 VOID CGameHook::killThePlayer() {
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
-	//TODO Test that these offsets are correct
-	std::vector<unsigned int> hpOffsets = { 0x3F8, 0x38, 0x18, 0x68 };
-	uintptr_t healthPointAddr = FindExecutableAddress(0x4768E78, hpOffsets); //BaseB + HP Offsets
+	std::vector<unsigned int> hpOffsets = { 0x68, 0x3E8 };
+	uintptr_t healthPointAddr = FindDMAAddyStandalone(0x141C77E50, hpOffsets);
 
 	int newHP = 0;
 	WriteProcessMemory(hProcess, (BYTE*)healthPointAddr, &newHP, sizeof(newHP), nullptr);
 }
-*/
 
 BOOL CGameHook::updateRuntimeValues() {
 	DWORD processId = GetCurrentProcessId();

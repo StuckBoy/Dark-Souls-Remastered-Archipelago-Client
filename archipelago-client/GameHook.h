@@ -19,13 +19,13 @@ public:
 	virtual VOID giveItems();
 	virtual VOID itemGib(DWORD itemId);
 	virtual BOOL endingAchieved();
-	//TODO Implement Additional Features
-	//virtual VOID manageDeathLink();
+	virtual VOID manageDeathLink();
 	virtual BYTE* findPattern(BYTE* pBaseAddress, BYTE* pbMask, const char* pszMask, size_t nLength);
 	int healthPoint = -1, lastHealthPoint = -1, playTime = -1;
 	char clearCount;
 	SIZE_T healthPointRead, playTimeRead, clearCountFlagRead;
 
+	DWORD dIsDeathLink;
 
 	//TODO Update with addressed for DSR?
 	//Player (Stats? Only used by AutoEquip.cpp)
@@ -47,6 +47,8 @@ private:
 	static uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets);
 	static uintptr_t FindDMAAddyStandalone(uintptr_t ptr, std::vector<unsigned int> offsets);
 	static BOOL Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD dByteLen);
+
+	static VOID killThePlayer();
 	
 	uintptr_t GameFlagData = -1;
 	uintptr_t Param = -1;
