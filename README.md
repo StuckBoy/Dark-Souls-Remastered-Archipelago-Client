@@ -5,7 +5,7 @@ Dark Souls Remastered client made for Archipelago multiworld randomizer. See [ar
 ## How to install
 
 - Download the lastest version available [here](https://github.com/Marechal-L/Dark-Souls-III-Archipelago-client/releases).
-- Extract d8input.dll into your Dark Souls Remastered install folder
+- Extract dinput8.dll into your Dark Souls Remastered install folder
 - Generate a game using Archipelago
 - Launch the game through Steam
 
