@@ -101,8 +101,7 @@ VOID CCore::Run() {
 				GameHook->giveItems();
 				pLastReceivedIndex++;
 			}
-			//TODO Remove comment once method has been updated
-			if (/*GameHook->isLordOfCinderDefeated() && */sendGoalStatus) {
+			if (GameHook->endingAchieved() && sendGoalStatus) {
 				sendGoalStatus = false;
 				ArchipelagoInterface->gameFinished();
 			}
@@ -139,15 +138,16 @@ VOID CCore::Panic(const char* pMessage, const char* pSort, DWORD dError, DWORD d
 	sprintf_s(pOutput, "\n%s -> %s (%i)\n", pSort, pMessage, dError);
 
 	printf("%s", pOutput);
-	
+
 	if (dIsFatalError) {
 		sprintf_s(pTitle, "[Archipelago client - Fatal Error]");
-	} else {
+	}
+	else {
 		sprintf_s(pTitle, "[Archipelago client - Error]");
 	};
 
 	MessageBoxA(NULL, pOutput, pTitle, MB_ICONERROR);
-	
+
 	if (dIsFatalError) *(int*)0 = 0;
 
 	return;
@@ -172,13 +172,11 @@ VOID CCore::InputCommand() {
 			std::cout << "/itemGib executed with " << param << "\n";
 			GameHook->itemGib(std::stoi(param));
 		}
-
 		if (line.find("/give ") == 0) {
 			std::string param = line.substr(6);
 			std::cout << "/give executed with " << param << "\n";
 			ItemRandomiser->receivedItemsQueue.push_front(std::stoi(param));
 		}
-
 		if (line.find("/save") == 0) {
 			std::cout << "/save\n";
 			Core->saveConfigFiles = true;

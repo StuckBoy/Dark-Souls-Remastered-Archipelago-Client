@@ -84,17 +84,6 @@ BOOL CGameHook::updateRuntimeValues() {
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
-	int executableSize = 49108 * 1000;
-	BYTE* patternBAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)baseBPattern, baseBMask, executableSize);
-	int thirdInteger = -1;
-	ReadProcessMemory(hProcess, (BYTE*)(patternBAddr + 3), &thirdInteger, sizeof(thirdInteger), 0);
-	BYTE* finalBAddr = patternBAddr + thirdInteger + 7;
-	BaseB = (uintptr_t)finalBAddr;
-	BYTE* patternXAddr = findPattern((BYTE*)GetModuleBaseAddress(), (BYTE*)baseXPattern, baseXMask, executableSize);
-	thirdInteger = -1;
-	ReadProcessMemory(hProcess, (BYTE*)(patternBAddr + 3), &thirdInteger, sizeof(thirdInteger), 0);
-	BYTE* finalXAddr = patternXAddr + thirdInteger + 7;
-	BaseX = (uintptr_t)finalXAddr;
 	//Returned 141C8A530 for BaseB
 	//Returned 141C77E50 for BaseX
 #if DEBUG
@@ -118,24 +107,22 @@ BOOL CGameHook::updateRuntimeValues() {
 	//std::vector<unsigned int> lordOfCinderDefeatedFlagOffsets = { 0x00, 0x5F67 };
 	//uintptr_t soulOfCinderDefeatedFlagAddress = FindExecutableAddress(0x473BE28, lordOfCinderDefeatedFlagOffsets); //GameFlagData + Lord of Cinder defeated flag Offsets	
 
-	printf_s("\nReading process for Clear Count\n");
+	//printf_s("\nReading process for Clear Count\n");
 	std::vector<unsigned int> clearCountFlagOffsets = { 0x78 };
 	uintptr_t clearCountAddr = FindDMAAddyStandalone(0x141C8A530, clearCountFlagOffsets); //BaseB + PlayTime Offsets	
+
+	lastHealthPoint = healthPoint;
 
 	ReadProcessMemory(hProcess, (BYTE*)healthPointAddr, &healthPoint, sizeof(healthPoint), &healthPointRead);
 	ReadProcessMemory(hProcess, (BYTE*)playTimeAddr, &playTime, sizeof(playTime), &playTimeRead);
 	//TODO There's clear state and clear count, whichever is easier to verify
 	ReadProcessMemory(hProcess, (BYTE*)clearCountAddr, &clearCount, sizeof(clearCount), &clearCountFlagRead);
 
-	lastHealthPoint = healthPoint;
-
 #if DEBUG
 	printf_s("Your health is apparently: %zu\n", healthPointRead);
 	printf_s("Your play time is apparently: %zu\n", playTimeRead);
-#endif
-	printf_s("Your health is apparently: %d\n", healthPoint);
-	printf_s("Your play time is apparently: %d\n", playTime);
 	printf_s("Your clear count is apparently: %c\n\n", clearCount);
+#endif
 }
 
 VOID CGameHook::giveItems() {
@@ -151,8 +138,11 @@ BOOL CGameHook::endingAchieved() {
 	constexpr std::uint8_t mask7{ 0b1000'0000 };
 	return lordOfCinderDefeatedFlagRead != 0 && (int)(lordOfCinderDefeated & mask7) == 128;
 	*/
-	constexpr std::uint8_t mask7{ 0b1000'0000 };
-	return clearCountFlagRead != 0 && (int)(clearCount & mask7) == 128;
+	//constexpr std::uint8_t mask7{ 0b1000'0000 };
+	//return clearCountFlagRead != 0 && (int)(clearCount & mask7) == 128;
+
+	//TODO Implement Win Condition
+	return false;
 }
 
 VOID CGameHook::itemGib(DWORD itemId) {
@@ -213,7 +203,6 @@ void CGameHook::ConvertToLittleEndianByteArray(uintptr_t address, char* output) 
 		address >>= 8;
 	}
 }
-
 
 uintptr_t CGameHook::FindExecutableAddress(uintptr_t ptrOffset, std::vector<unsigned int> offsets) {
 	DWORD processId = GetCurrentProcessId();

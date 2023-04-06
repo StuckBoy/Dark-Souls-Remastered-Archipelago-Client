@@ -61,7 +61,6 @@ private:
 	const char* baseXMask = "xxx????xxxxxxxxx????xxxxxx????x";
 
 	//TODO Is BaseA even needed for DSR?
-	//TODO Is BaseA even needed for DSR?
 	uintptr_t BaseA = -1;
 	const char* baseAPattern = reinterpret_cast<const char*>("\x48\x89\x05\x00\x00\x00\x00\x45\x33\xED\x48\x8B\xF1\x48\x85\xC0");
 	const char* baseAMask = "xxx????xxxxxxxxx";
