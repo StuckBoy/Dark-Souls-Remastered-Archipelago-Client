@@ -14,11 +14,21 @@ extern CArchipelago* ArchipelagoInterface;
 extern CCore* Core;
 
 BOOL CGameHook::preInitialize() {
-	if (MH_Initialize() != MH_OK) {
+	Core->Logger("CGameHook::preInitialize", true, false);
+
+	try {
+		if (MH_Initialize() != MH_OK) return false;
+	} catch (const std::exception&) {
+		Core->Logger("Cannot initialize MinHook");
 		return false;
 	}
-	//Init code cave for Item Randomizer
-	return Hook(0x0018004A, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
+
+	try {
+		return Hook(0x0018004A, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot hook the game 0x1407BBA80");
+	}
+	return false;
 }
 
 BOOL CGameHook::Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD dByteLen) {
@@ -35,23 +45,52 @@ BOOL CGameHook::Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD 
 }
 
 BOOL CGameHook::initialize() {
+	Core->Logger("CGameHook::initialize", true, false);
 
 	BOOL bReturn = true;
 
 	//Inject ItemGibData
-	itemGibDataCodeCave = InjectShellCode(nullptr, ItemGibDataShellcode, 17);
+	try {
+		itemGibDataCodeCave = InjectShellCode(nullptr, ItemGibDataShellcode, 17);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot inject ItemGibData");
+		return false;
+	}
 
 	//Modify ItemGibShellcode
-	bReturn &= replaceShellCodeAddress(ItemGibShellcode, 15, itemGibDataCodeCave, 0, sizeof(void*));
-	bReturn &= replaceShellCodeAddress(ItemGibShellcode, 26, itemGibDataCodeCave, 4, 4);
-	bReturn &= replaceShellCodeAddress(ItemGibShellcode, 33, itemGibDataCodeCave, 8, 4);
+	try {
+		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 15, itemGibDataCodeCave, 0, sizeof(void*));
+		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 26, itemGibDataCodeCave, 4, 4);
+		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 33, itemGibDataCodeCave, 8, 4);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot modify ItemGibShellcode");
+		return false;
+	}
 
 	//Inject ItemGibShellcode
-	LPVOID itemGibCodeCave = InjectShellCode((LPVOID)0x1400003f0, ItemGibShellcode, 93);
+	try {
+		LPVOID itemGibCodeCave = InjectShellCode((LPVOID)0x1400003f0, ItemGibShellcode, 93);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot inject ItemGibShellcode");
+		return false;
+	}
 
-	//Inject InventoryGibShellCode
-	//LPVOID inventoryGibCodeCave = InjectShellCode((LPVOID)0x00180063, InventoryGibShellCode, 185);
+	return bReturn;
+}
 
+BOOL CGameHook::applySettings() {
+	BOOL bReturn = true;
+
+	if (dIsAutoEquip) { bReturn &= Hook(0x1407BBE92, (DWORD64)&tAutoEquip, &rAutoEquip, 6); }
+	if (dIsNoWeaponRequirements) { bReturn &= Hook(0x140C073B9, (DWORD64)&tNoWeaponRequirements, &rNoWeaponRequirements, 7); }
+	if (dIsNoSpellsRequirements) { RemoveSpellsRequirements(); }
+	if (dLockEquipSlots) { LockEquipSlots(); }
+	if (dIsNoEquipLoadRequirements) { RemoveEquipLoad(); }
+	if (dEnableDLC) {
+		if (!checkIsDlcOwned()) {
+			Core->Panic("You must own both the ASHES OF ARIANDEL and THE RINGED CITY DLC in order to enable the DLC option in Archipelago", "Missing DLC detected", FE_MissingDLC, 1);
+		}
+	}
 	return bReturn;
 }
 
@@ -62,6 +101,7 @@ VOID CGameHook::manageDeathLink() {
 		killThePlayer();
 	} else if (lastHealthPoint != 0 && healthPoint == 0) { //The player just died, ignore the deathLink if received
 		if (deathLinkData) {
+			Core->Logger("The player just died, a death link has been ignored", true, false);
 			deathLinkData = false;
 			return;
 		}
@@ -70,6 +110,7 @@ VOID CGameHook::manageDeathLink() {
 }
 
 VOID CGameHook::killThePlayer() {
+	Core->Logger("Kill the player", true, false);
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 	std::vector<unsigned int> hpOffsets = { 0x68, 0x3E8 };
@@ -80,6 +121,7 @@ VOID CGameHook::killThePlayer() {
 }
 
 BOOL CGameHook::updateRuntimeValues() {
+
 	DWORD processId = GetCurrentProcessId();
 	HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, NULL, processId);
 
@@ -126,7 +168,9 @@ BOOL CGameHook::updateRuntimeValues() {
 
 VOID CGameHook::giveItems() {
 	//Send the next item in the list
-	if (!ItemRandomiser->receivedItemsQueue.empty()) {
+	int size = ItemRandomiser->receivedItemsQueue.size();
+	if (size > 0) {
+		Core->Logger("Send an item from the list of items", true, false);
 		itemGib(ItemRandomiser->receivedItemsQueue.back());
 	}
 }
@@ -154,15 +198,22 @@ VOID CGameHook::itemGib(DWORD itemId) {
 	char* littleEndianItemId = (char*)malloc(sizeof(DWORD));
 	ConvertToLittleEndianByteArray((uintptr_t)itemId, littleEndianItemId);
 
-	DWORD memory = 0;
-	ReadProcessMemory(hProcess, (BYTE*)gibItem, &memory, sizeof(memory), nullptr);
-	DWORD newMemory = itemId;
-	WriteProcessMemory(hProcess, (BYTE*)gibItem, &newMemory, sizeof(newMemory), nullptr);
+	try {
+		DWORD memory = 0;
+		ReadProcessMemory(hProcess, (BYTE*)gibItem, &memory, sizeof(memory), nullptr);
+		DWORD newMemory = itemId;
+		WriteProcessMemory(hProcess, (BYTE*)gibItem, &newMemory, sizeof(newMemory), nullptr);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot write the item to the memory");
+	}
 
-	typedef int func(void);
-	func* f = (func*)0x1400003F0; //Must match address for itemGibCodeCave
-
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)f, NULL, NULL, NULL);
+	try {
+		typedef int func(void);
+		func* f = (func*)0x1400003F0;
+		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)f, NULL, NULL, NULL);
+	} catch (const std::exception&) {
+		Core->Logger("Cannot start the 0x1400003F0 thread");
+	}
 }
 
 

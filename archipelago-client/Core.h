@@ -35,6 +35,7 @@
 #define AP_MissingFile 11
 #define AP_MissingValue 12
 #define FE_MissingDLC 13
+#define FE_ApplySettings 14
 
 #define VERSION "0.0.2"
 
@@ -52,6 +53,7 @@ public:
 	virtual VOID SaveConfigFiles();
 	virtual VOID CleanReceivedItemsList();
 	virtual BOOL CheckOldApFile();
+	virtual VOID Logger(std::string logMessage, BOOL inFile = true, BOOL inConsole = true);
 
 	std::string pSlotName;
 	std::string pPassword;
@@ -60,6 +62,7 @@ public:
 	BOOL sendGoalStatus = true;
 	std::list<std::string> pReceivedItems = { };
 	int pLastReceivedIndex = 0;
+	BOOL debugLogs = false;
 
 	static const int RUN_SLEEP = 2000;
 };
