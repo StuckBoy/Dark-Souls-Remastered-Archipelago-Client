@@ -49,6 +49,9 @@ BOOL CGameHook::initialize() {
 	//Inject ItemGibShellcode
 	LPVOID itemGibCodeCave = InjectShellCode((LPVOID)0x1400003f0, ItemGibShellcode, 93);
 
+	//Inject InventoryGibShellCode
+	//LPVOID inventoryGibCodeCave = InjectShellCode((LPVOID)0x00180063, InventoryGibShellCode, 185);
+
 	return bReturn;
 }
 
@@ -162,6 +165,18 @@ VOID CGameHook::itemGib(DWORD itemId) {
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)f, NULL, NULL, NULL);
 }
 
+
+//replaceShellCodeAddress(ItemGibShellcode, 15, itemGibDataCodeCave, 0, sizeof(void*));
+//replaceShellCodeAddress(ItemGibShellcode, 26, itemGibDataCodeCave, 4, 4);
+//replaceShellCodeAddress(ItemGibShellcode, 33, itemGibDataCodeCave, 8, 4);
+
+/*
+shellcode - Byte Array
+shellcodeoffset - int
+codeCave - LPVOID
+codeCaveOffset - int
+length - int
+*/
 BOOL CGameHook::replaceShellCodeAddress(BYTE *shellcode, int shellCodeOffset, LPVOID codeCave, int codeCaveOffset, int length) {
 
 	char* addressArray = (char*)malloc(sizeof(void*));
