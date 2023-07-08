@@ -17,6 +17,8 @@ APClient* ap;
 
 BOOL CArchipelago::Initialise(std::string URI) {
 	
+	Core->Logger("CArchipelago::Initialise", true, false);
+
 	// read or generate uuid, required by AP
 	std::string uuid = ap_get_uuid(UUID_FILE);
 	if (ap != nullptr) {
@@ -31,9 +33,7 @@ BOOL CArchipelago::Initialise(std::string URI) {
 	ap->set_socket_disconnected_handler([]() {
 		});
 	ap->set_slot_connected_handler([](const json& data) {
-		
-		printf("Slot connected successfully, reading slot data ... \n");
-
+		Core->Logger("Slot connected successfully, reading slot data ... ");
 		// read the archipelago slot data
 
 		//Mandatory values
@@ -94,14 +94,12 @@ BOOL CArchipelago::Initialise(std::string URI) {
 
 		});
 	ap->set_slot_disconnected_handler([]() {
-		printf("Slot disconnected\n");
+		Core->Logger("Slot disconnected");
 		});
 	ap->set_slot_refused_handler([](const std::list<std::string>& errors){
-		printf("\n");
 		for (const auto& error : errors) {
-			printf("Connection refused : %s\n", error.c_str());
+			Core->Logger("Connection refused : " + error);
 		}
-		printf("\n");
 		});
 
 	ap->set_room_info_handler([]() {
@@ -132,12 +130,12 @@ BOOL CArchipelago::Initialise(std::string URI) {
 			}
 
 			std::ostringstream stringStream;
-			stringStream << "#" << item.index << ": " << itemname.c_str() << " from " << sender.c_str() << " - " << location.c_str() << std::endl;
+			stringStream << "#" << item.index << ": " << itemname.c_str() << " from " << sender.c_str() << " - " << location.c_str();
 			std::string itemDesc = stringStream.str();
 
 			//Add the item to the list of already received items, only for logging purpose
 			Core->pReceivedItems.push_back(itemDesc);
-			printf(itemDesc.c_str());
+			Core->Logger(itemDesc);
 
 			//Determine the item address
 			DWORD address = 0;
@@ -148,8 +146,8 @@ BOOL CArchipelago::Initialise(std::string URI) {
 				}
 			}
 			if (address == 0) {
-				std::cout << "The " << itemname.c_str() << " has not been found in the item pool. Please check your seed options" << "\n";
-				return;
+				Core->Logger("The following item has not been found in the item pool. Please check your seed options : " + itemname);
+				continue;
 			}
 
 			ItemRandomiser->receivedItemsQueue.push_front((DWORD)address);
@@ -161,15 +159,16 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		});
 
 	ap->set_print_handler([](const std::string& msg) {
-		printf("%s\n", msg.c_str());
+		Core->Logger(msg);
 		});
 
 	ap->set_print_json_handler([](const std::list<APClient::TextNode>& msg) {
-		printf("%s\n", ap->render_json(msg, APClient::RenderFormat::TEXT).c_str());
+		Core->Logger(ap->render_json(msg, APClient::RenderFormat::TEXT));
 		});
 
 	ap->set_bounced_handler([](const json& cmd) {
 		if (GameHook->dIsDeathLink) {
+			Core->Logger("Received DeathLink", true, false);
 			auto tagsIt = cmd.find("tags");
 			auto dataIt = cmd.find("data");
 			if (tagsIt != cmd.end() && tagsIt->is_array()
@@ -178,14 +177,16 @@ BOOL CArchipelago::Initialise(std::string URI) {
 				if (dataIt != cmd.end() && dataIt->is_object()) {
 					json data = *dataIt;
 					if (data["source"].get<std::string>() != Core->pSlotName) {
-						printf("Died by the hands of %s: %s\n",
-							data["source"].is_string() ? data["source"].get<std::string>().c_str() : "???",
-							data["cause"].is_string() ? data["cause"].get<std::string>().c_str() : "???");
+						
+						std::string source = data["source"].is_string() ? data["source"].get<std::string>().c_str() : "???";
+						std::string cause = data["cause"].is_string() ? data["cause"].get<std::string>().c_str() : "???";
+						Core->Logger("Died by the hands of " + source + " : " + cause);
+
 						GameHook->deathLinkData = true;
 					}
 				}
 				else {
-					printf("Bad deathlink packet!\n");
+					Core->Logger("Bad deathlink packet!", true, false);
 				}
 			}
 		}
@@ -205,11 +206,17 @@ BOOLEAN CArchipelago::isConnected() {
 }
 
 VOID CArchipelago::update() {
+
 	if (ap) ap->poll();
 
-	if (ap && !ItemRandomiser->checkedLocationsList.empty()) {
+	int size = ItemRandomiser->checkedLocationsList.size();
+	if (ap && size > 0) {
 		if (ap->LocationChecks(ItemRandomiser->checkedLocationsList)) {
+			Core->Logger(size + " checks sent successfully", true, false);
 			ItemRandomiser->checkedLocationsList.clear();
+		}
+		else {
+			Core->Logger(size + " checks has not been sent and will be kept in queue");
 		}
 	}
 }
@@ -221,7 +228,7 @@ VOID CArchipelago::gameFinished() {
 VOID CArchipelago::sendDeathLink() {
 	if (!ap || !GameHook->dIsDeathLink) return;
 
-	printf("Sending deathlink...\n");
+	Core->Logger("Sending deathlink");
 
 	json data{
 		{"time", ap->get_server_time()},
