@@ -103,6 +103,10 @@ private:
 		0xC3
 	};
 
+	long long itemRandomizerAddress = 0x140000010;
+	long long itemGibCodeAddress = 0x13ffe0000;
+	long long itemGibDataCodeAddress = 0x140000168;
+
 };
 
 

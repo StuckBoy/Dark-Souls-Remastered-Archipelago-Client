@@ -34,22 +34,17 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		});
 	ap->set_slot_connected_handler([](const json& data) {
 		Core->Logger("Slot connected successfully, reading slot data ... ");
-		// read the archipelago slot data
 
 		//Mandatory values
-
 		if (!data.contains("locationsId")) {
 			Core->Panic("Missing locations Id!", "Correct this issue before trying again.", 0, 1);
 		}
 		else if (!data.contains("locationsAddress")) {
 			Core->Panic("Missing locations address!", "Correct this issue before trying again.", 0, 1);
 		}
-		//TODO Why is this missing? Are we asking for something that doesn't exist yet?
-		/*
 		else if (!data.contains("locationsTarget")) {
 			Core->Panic("Missing locations target!", "Correct this issue before trying again.", 0, 1);
 		}
-		*/
 		else if (!data.contains("itemsId")) {
 			Core->Panic("Missing item ids!", "Correct this issue before trying again.", 0, 1);
 		}
@@ -75,7 +70,7 @@ BOOL CArchipelago::Initialise(std::string URI) {
 
 		data.at("locationsId").get_to(ItemRandomiser->pLocationsId);
 		data.at("locationsAddress").get_to(ItemRandomiser->pLocationsAddress);
-		//data.at("locationsTarget").get_to(ItemRandomiser->pLocationsTarget);
+		data.at("locationsTarget").get_to(ItemRandomiser->pLocationsTarget);
 		data.at("itemsId").get_to(ItemRandomiser->pItemsId);
 		data.at("itemsAddress").get_to(ItemRandomiser->pItemsAddress);
 		data.at("base_id").get_to(ItemRandomiser->pBaseId);

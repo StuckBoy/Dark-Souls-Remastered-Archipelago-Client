@@ -63,7 +63,7 @@ VOID CItemRandomiser::RandomiseItem(UINT_PTR qWorldChrMan, UINT_PTR pItemBuffer,
 			}
 			checkedLocationsList.push_front(pLocationsId[serverLocationIndex]);
 		} else {
-			//Nothing to do, this is a vanilla item so we will let it go to the player's inventory	
+			//Nothing to do, this is a vanilla item so let it go to the player's inventory	
 		}
 
 		if (Core->debugLogs) {

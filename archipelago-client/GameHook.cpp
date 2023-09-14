@@ -24,9 +24,10 @@ BOOL CGameHook::preInitialize() {
 	}
 
 	try {
-		return Hook(0x0018004A, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
+		Core->Logger("Hooking in at 0x140000010");
+		return Hook(itemRandomizerAddress, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
 	} catch (const std::exception&) {
-		Core->Logger("Cannot hook the game 0x1407BBA80");
+		Core->Logger("Cannot hook the game 0x140000010");
 	}
 	return false;
 }
@@ -69,7 +70,7 @@ BOOL CGameHook::initialize() {
 
 	//Inject ItemGibShellcode
 	try {
-		LPVOID itemGibCodeCave = InjectShellCode((LPVOID)0x1400003f0, ItemGibShellcode, 93);
+		LPVOID itemGibCodeCave = InjectShellCode((LPVOID)itemGibCodeAddress, ItemGibShellcode, 93);
 	} catch (const std::exception&) {
 		Core->Logger("Cannot inject ItemGibShellcode");
 		return false;
@@ -80,7 +81,7 @@ BOOL CGameHook::initialize() {
 
 BOOL CGameHook::applySettings() {
 	BOOL bReturn = true;
-
+/*
 	if (dIsAutoEquip) { bReturn &= Hook(0x1407BBE92, (DWORD64)&tAutoEquip, &rAutoEquip, 6); }
 	if (dIsNoWeaponRequirements) { bReturn &= Hook(0x140C073B9, (DWORD64)&tNoWeaponRequirements, &rNoWeaponRequirements, 7); }
 	if (dIsNoSpellsRequirements) { RemoveSpellsRequirements(); }
@@ -91,6 +92,7 @@ BOOL CGameHook::applySettings() {
 			Core->Panic("You must own both the ASHES OF ARIANDEL and THE RINGED CITY DLC in order to enable the DLC option in Archipelago", "Missing DLC detected", FE_MissingDLC, 1);
 		}
 	}
+*/
 	return bReturn;
 }
 
@@ -209,7 +211,7 @@ VOID CGameHook::itemGib(DWORD itemId) {
 
 	try {
 		typedef int func(void);
-		func* f = (func*)0x1400003F0;
+		func* f = (func*)itemGibCodeAddress;
 		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)f, NULL, NULL, NULL);
 	} catch (const std::exception&) {
 		Core->Logger("Cannot start the 0x1400003F0 thread");
