@@ -149,9 +149,11 @@ BOOL CArchipelago::Initialise(std::string URI) {
 		}
 		});
 
+	/*
 	ap->set_data_package_changed_handler([](const json& data) {
 		ap->save_data_package(DATAPACKAGE_CACHE);
 		});
+	*/
 
 	ap->set_print_handler([](const std::string& msg) {
 		Core->Logger(msg);
