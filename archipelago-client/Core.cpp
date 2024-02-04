@@ -46,7 +46,7 @@ BOOL CCore::Initialise() {
 	freopen_s(&fp, "CONOUT$", "w", stdout);
 	freopen_s(&fp, "CONIN$", "r", stdin);
 	Core->Logger(std::string("Archipelago client v") + VERSION);
-	Core->Logger("A new version may or may not be available, please check this link for updates : https://github.com/Marechal-L/Dark-Souls-III-Archipelago-client/releases", false);
+	Core->Logger("A new version may or may not be available, please check this link for updates : https://github.com/stuckboy/Dark-Souls-Remastered-Archipelago-Client/", false);
 	Core->Logger("Type '/connect {SERVER_IP}:{SERVER_PORT} {SLOT_NAME} [password:{PASSWORD}]' to connect to the room", false);
 	Core->Logger("Type '/help for more information", false);
 	Core->Logger("-----------------------------------------------------", false);
@@ -89,6 +89,9 @@ VOID CCore::Run() {
 
 	if (GameHook->healthPointRead != 0 && GameHook->playTimeRead != 0) {
 		if (!isInit && ArchipelagoInterface->isConnected() && initProtectionDelay <= 0) {
+			if (!GameHook->redirectJump()) {
+				Core->Logger("Negatory Hombre");
+			}
 			ReadConfigFiles();
 			CleanReceivedItemsList();
 
@@ -98,6 +101,7 @@ VOID CCore::Run() {
 				Core->Panic("Failed to apply settings", "...\\Randomiser\\Core\\Core.cpp", FE_ApplySettings, 1);
 				int3
 			}
+			Core->Logger("Mod initialized successfully");
 			isInit = true;
 		}
 
@@ -174,7 +178,7 @@ VOID CCore::InputCommand() {
 			printf("/debug on|off : Prints additional debug info \n");
 		}
 
-#ifdef DEBUG
+//#ifdef DEBUG
 		if (line.find("/itemGib ") == 0) {
 			std::string param = line.substr(9);
 			std::cout << "/itemGib executed with " << param << "\n";
@@ -189,7 +193,7 @@ VOID CCore::InputCommand() {
 			std::cout << "/save\n";
 			Core->saveConfigFiles = true;
 		}
-#endif
+//#endif
 
 		if (line.find("/debug ") == 0) {
 			std::string param = line.substr(7);

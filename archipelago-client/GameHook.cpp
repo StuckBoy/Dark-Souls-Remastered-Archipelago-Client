@@ -53,6 +53,7 @@ BOOL CGameHook::initialize() {
 	//Inject ItemGibData
 	try {
 		itemGibDataCodeCave = InjectShellCode(nullptr, ItemGibDataShellcode, 17);
+		Core->Logger("Deposited data shellcode into data code cave at <null> (not 140000168)");
 	} catch (const std::exception&) {
 		Core->Logger("Cannot inject ItemGibData");
 		return false;
@@ -61,8 +62,11 @@ BOOL CGameHook::initialize() {
 	//Modify ItemGibShellcode
 	try {
 		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 15, itemGibDataCodeCave, 0, sizeof(void*));
+		Core->Logger("Replaced code in Data code cave at offset 15");
 		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 26, itemGibDataCodeCave, 4, 4);
+		Core->Logger("Replaced code in Data code cave at offset 26");
 		bReturn &= replaceShellCodeAddress(ItemGibShellcode, 33, itemGibDataCodeCave, 8, 4);
+		Core->Logger("Replaced code in Data code cave at offset 33");
 	} catch (const std::exception&) {
 		Core->Logger("Cannot modify ItemGibShellcode");
 		return false;
@@ -70,13 +74,63 @@ BOOL CGameHook::initialize() {
 
 	//Inject ItemGibShellcode
 	try {
-		LPVOID itemGibCodeCave = InjectShellCode((LPVOID)itemGibCodeAddress, ItemGibShellcode, 93);
+		//LPVOID itemGibCodeCave = InjectShellCode((LPVOID)itemGibCodeAddress, ItemGibShellcode, 93);
+		LPVOID itemGibCodeCave = InjectShellCode((LPVOID)itemGibCodeAddress, innocentShellCode, 12);
+		Core->Logger("Deposited ItemGib shell code at 13ffe0000");
 	} catch (const std::exception&) {
 		Core->Logger("Cannot inject ItemGibShellcode");
 		return false;
 	}
 
+	/*
+	//Replace call destination @ 1403fb144
+	try {
+		LPVOID pCodeCave = VirtualAlloc((LPVOID)0x140efb1ee, 5, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		//InjectShellCode((LPVOID)0x1403fb144, Jumperino, 5);
+		// blank it
+		//std::memcpy((LPVOID)0x1403FB144, Jumperino, 5);
+		std::memcpy((LPVOID)0x1403fb1ee, Jumperino, 5);
+		// copy the machine code into that memory:
+		//std::memcpy((LPVOID)0x1403fb144, Jumperino, 5);
+		// mark the memory as executable:
+		DWORD lpflOldProtect;
+		//VirtualProtect((LPVOID)0x1403fb144, 5, PAGE_EXECUTE_READ, & lpflOldProtect);
+		VirtualProtect((LPVOID)0x1403fb1ee, 5, PAGE_EXECUTE_READ, & lpflOldProtect);
+
+		Core->Logger("We're in?");
+	}
+	catch (const std::exception&) {
+		Core->Logger("He didn't make it.");
+		return false;
+	}
+	*/
+
 	return bReturn;
+}
+
+BOOL CGameHook::redirectJump() {
+	try {
+		LPVOID pCodeCave = VirtualAlloc((LPVOID)0x1403fb149, 6, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		//LPVOID pCodeCave = VirtualAlloc((LPVOID)0x140efb1ee, 5, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		//InjectShellCode((LPVOID)0x1403fb144, Jumperino, 5);
+		// blank it
+		std::memcpy((LPVOID)0x1403fb149, DoublyBlankerino, 6);
+		std::memcpy((LPVOID)0x1403fb149, Jumperino, 5);
+		//std::memcpy((LPVOID)0x1403fb1ee, Jumperino, 5);
+		// copy the machine code into that memory:
+		//std::memcpy((LPVOID)0x1403fb144, Jumperino, 5);
+		// mark the memory as executable:
+		DWORD lpflOldProtect;
+		VirtualProtect((LPVOID)0x1403fb149, 6, PAGE_EXECUTE_READ, & lpflOldProtect);
+		//VirtualProtect((LPVOID)0x1403fb1ee, 5, PAGE_EXECUTE_READ, & lpflOldProtect);
+
+		Core->Logger("We're in?");
+		return true;
+	}
+	catch (const std::exception&) {
+		Core->Logger("He didn't make it.");
+		return false;
+	}
 }
 
 BOOL CGameHook::applySettings() {
@@ -159,6 +213,7 @@ BOOL CGameHook::updateRuntimeValues() {
 	ReadProcessMemory(hProcess, (BYTE*)healthPointAddr, &healthPoint, sizeof(healthPoint), &healthPointRead);
 	ReadProcessMemory(hProcess, (BYTE*)playTimeAddr, &playTime, sizeof(playTime), &playTimeRead);
 	//TODO There's clear state and clear count, whichever is easier to verify
+	//TODO Would checking for achievement earned state be easier? (Age of Fire/Darkness)
 	ReadProcessMemory(hProcess, (BYTE*)clearCountAddr, &clearCount, sizeof(clearCount), &clearCountFlagRead);
 
 #if DEBUG
@@ -203,8 +258,10 @@ VOID CGameHook::itemGib(DWORD itemId) {
 	try {
 		DWORD memory = 0;
 		ReadProcessMemory(hProcess, (BYTE*)gibItem, &memory, sizeof(memory), nullptr);
+		Core->Logger("Read process memory inside itemGib(), preparing to give item w/id: " + itemId);
 		DWORD newMemory = itemId;
 		WriteProcessMemory(hProcess, (BYTE*)gibItem, &newMemory, sizeof(newMemory), nullptr);
+		Core->Logger("Wrote new item id out.");
 	} catch (const std::exception&) {
 		Core->Logger("Cannot write the item to the memory");
 	}
@@ -245,8 +302,9 @@ BOOL CGameHook::replaceShellCodeAddress(BYTE *shellcode, int shellCodeOffset, LP
 
 LPVOID CGameHook::InjectShellCode(LPVOID address, BYTE* shellCode, size_t len) {
 	
-	//TODO Is this hex value still accurate?
-	LPVOID pCodeCave = VirtualAlloc(address, 0x3000, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+	//TODO Is this hex value still accurate? (0x3000?)
+	//Can using the length of the shell code work as the dwSize?
+	LPVOID pCodeCave = VirtualAlloc(address, len, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!pCodeCave) {
 		return nullptr;
 	}

@@ -44,16 +44,17 @@ VOID CItemRandomiser::RandomiseItem(UINT_PTR qWorldChrMan, UINT_PTR pItemBuffer,
 
 		//Check if the item is received from the server
 		if (isReceivedFromServer(dItemID)) {
+			Core->Logger("Incoming ID from another world: " + dItemID);
 			receivedItemsQueue.pop_back();
 			//Nothing to do, just let the item go to the player's inventory
 			Core->saveConfigFiles = true;
 		} else if ((serverLocationIndex = isARandomizedLocation(dItemID)) != -1) { //Check if the item is a randomized location
 			//From here, the item is considered as a location!	
-			//Check if the location contains a item for the local player
 
 			//Override the quantity
 			dItemQuantity = 1;
 
+			//Check if the location contains a item for the local player
 			if ((locationTargetItem = pLocationsTarget[serverLocationIndex]) != 0) {
 				dItemID = locationTargetItem;
 				Core->saveConfigFiles = true;
@@ -84,6 +85,7 @@ VOID CItemRandomiser::RandomiseItem(UINT_PTR qWorldChrMan, UINT_PTR pItemBuffer,
 int CItemRandomiser::isARandomizedLocation(DWORD dItemID) {
 	for (int i = 0; i < pLocationsAddress.size(); ++i) {
 		if (dItemID == pLocationsAddress[i]) {
+			Core->Logger("Hey! This location should be randomized! -> " + dItemID);
 			/*
 			TODO Support Progressive Locations
 			if (isProgressiveLocation(dItemID)) {
