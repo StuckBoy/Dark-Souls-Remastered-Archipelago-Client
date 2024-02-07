@@ -51,12 +51,14 @@ BOOL CCore::Initialise() {
 	Core->Logger("Type '/help for more information", false);
 	Core->Logger("-----------------------------------------------------", false);
 
+	//Check if we hooked into the game
 	if (!GameHook->preInitialize()) {
 		//TODO More descriptive error
 		Core->Panic("Please correct this issue.", "Cannot hook the game", FE_InitFailed, 1);
 		return false;
 	}
-
+	
+	//Check if we successfully prepared our mod code
 	if (!GameHook->initialize()) {
 		Core->Panic("Failed to initialise GameHook", "...\\Randomiser\\Core\\Core.cpp", FE_InitFailed, 1);
 		return false;
@@ -73,13 +75,22 @@ BOOL CCore::Initialise() {
 }
 
 BOOL CCore::CheckOldApFile() {
-
 	// read the archipelago json file
 	std::ifstream i("AP.json");
 	return !i.fail();
 }
 
+/**
+Tracks whether we've ran through the initialization process of our client's code.
+Once True, it indicates several things.
+
+1. The item pickup assembly has been patched to notify our console of item pickups.
+2. The desired settings from the player have been set (TBD)
+*/
 bool isInit = false;
+/**
+An arbitrary delay in seconds to prevent the mod from acting when it shouldn't
+*/
 int initProtectionDelay = 3;
 
 VOID CCore::Run() {
@@ -90,7 +101,7 @@ VOID CCore::Run() {
 	if (GameHook->healthPointRead != 0 && GameHook->playTimeRead != 0) {
 		if (!isInit && ArchipelagoInterface->isConnected() && initProtectionDelay <= 0) {
 			if (!GameHook->redirectJump()) {
-				Core->Logger("Negatory Hombre");
+				Core->Logger("Failed to add redirect code.");
 			}
 			ReadConfigFiles();
 			CleanReceivedItemsList();
@@ -101,16 +112,18 @@ VOID CCore::Run() {
 				Core->Panic("Failed to apply settings", "...\\Randomiser\\Core\\Core.cpp", FE_ApplySettings, 1);
 				int3
 			}
-			Core->Logger("Mod initialized successfully");
+			Core->Logger("Core#run: Mod initialized successfully");
 			isInit = true;
 		}
 
 		if (isInit) {
 			GameHook->manageDeathLink();
+			//If the player has yet to receive items from outside their game
 			if (!ItemRandomiser->receivedItemsQueue.empty()) {
 				GameHook->giveItems();
 				pLastReceivedIndex++;
 			}
+			//If the player has triggered an ending flag and we haven't notified the server yet
 			if (GameHook->endingAchieved() && sendGoalStatus) {
 				sendGoalStatus = false;
 				ArchipelagoInterface->gameFinished();
@@ -335,8 +348,7 @@ inline std::string getCurrentDateTime(std::string s) {
 
 VOID CCore::Logger(std::string logMessage, BOOL inFile, BOOL inConsole) {
 
-	if(inConsole)
-		std::cout << logMessage << std::endl;
+	if(inConsole) std::cout << logMessage << std::endl;
 
 	if (inFile) {
 		try {

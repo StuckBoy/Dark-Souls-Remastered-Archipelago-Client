@@ -202,6 +202,11 @@ BOOLEAN CArchipelago::isConnected() {
 	return ap && ap->get_state() == APClient::State::SLOT_CONNECTED;
 }
 
+/**
+Syncs changes found within the game up to the Archipelago. If the client has
+not reported every item found yet, it persists the list until it has verified 
+that the checks have been received and clears the list.
+*/
 VOID CArchipelago::update() {
 
 	if (ap) ap->poll();

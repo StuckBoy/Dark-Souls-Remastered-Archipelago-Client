@@ -24,7 +24,8 @@ BOOL CGameHook::preInitialize() {
 	}
 
 	try {
-		Core->Logger("Hooking in at 0x140000010");
+		Core->Logger("GameHook#preInitialize: Hooking in at 0x140000010");
+		//What exactly is this thing doing?
 		return Hook(itemRandomizerAddress, (DWORD64)&tItemRandomiser, &rItemRandomiser, 5);
 	} catch (const std::exception&) {
 		Core->Logger("Cannot hook the game 0x140000010");
@@ -34,12 +35,9 @@ BOOL CGameHook::preInitialize() {
 
 BOOL CGameHook::Hook(DWORD64 qAddress, DWORD64 qDetour, DWORD64* pReturn, DWORD dByteLen) {
 	MH_STATUS status = MH_CreateHook((LPVOID)qAddress, (LPVOID)qDetour, 0);
-	if (status != MH_OK) {
-		return false;
-	}
-	if (MH_EnableHook((LPVOID)qAddress) != MH_OK) {
-		return false;
-	}
+	if (status != MH_OK) return false;
+	if (MH_EnableHook((LPVOID)qAddress) != MH_OK) return false;
+
 	*pReturn = (qAddress + dByteLen);
 
 	return true;
@@ -53,7 +51,7 @@ BOOL CGameHook::initialize() {
 	//Inject ItemGibData
 	try {
 		itemGibDataCodeCave = InjectShellCode(nullptr, ItemGibDataShellcode, 17);
-		Core->Logger("Deposited data shellcode into data code cave at <null> (not 140000168)");
+		Core->Logger("GameHook#initialize: Deposited data shellcode into data code cave at <null> (not 140000168)");
 	} catch (const std::exception&) {
 		Core->Logger("Cannot inject ItemGibData");
 		return false;
@@ -110,25 +108,25 @@ BOOL CGameHook::initialize() {
 
 BOOL CGameHook::redirectJump() {
 	try {
-		LPVOID pCodeCave = VirtualAlloc((LPVOID)0x1403fb149, 6, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+		LPVOID pCodeCave = VirtualAlloc((LPVOID)dsJumpPoint, 6, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		//LPVOID pCodeCave = VirtualAlloc((LPVOID)0x140efb1ee, 5, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 		//InjectShellCode((LPVOID)0x1403fb144, Jumperino, 5);
 		// blank it
-		std::memcpy((LPVOID)0x1403fb149, DoublyBlankerino, 6);
-		std::memcpy((LPVOID)0x1403fb149, Jumperino, 5);
+		std::memcpy((LPVOID)dsJumpPoint, DoublyBlankerino, 6);
+		std::memcpy((LPVOID)dsJumpPoint, Jumperino, 5);
 		//std::memcpy((LPVOID)0x1403fb1ee, Jumperino, 5);
 		// copy the machine code into that memory:
 		//std::memcpy((LPVOID)0x1403fb144, Jumperino, 5);
 		// mark the memory as executable:
 		DWORD lpflOldProtect;
-		VirtualProtect((LPVOID)0x1403fb149, 6, PAGE_EXECUTE_READ, & lpflOldProtect);
+		VirtualProtect((LPVOID)dsJumpPoint, 6, PAGE_EXECUTE_READ, & lpflOldProtect);
 		//VirtualProtect((LPVOID)0x1403fb1ee, 5, PAGE_EXECUTE_READ, & lpflOldProtect);
 
-		Core->Logger("We're in?");
+		Core->Logger("GameHook#redirectJump: Nothing has broke yet for item pickup redirect.");
 		return true;
 	}
 	catch (const std::exception&) {
-		Core->Logger("He didn't make it.");
+		Core->Logger("Exception when attempting to redirect item pickup.");
 		return false;
 	}
 }
@@ -245,6 +243,13 @@ BOOL CGameHook::endingAchieved() {
 	return false;
 }
 
+/**
+Writes out an Item ID (little-endian) to memory, then triggers the ItemGib code.
+Once activated, the ItemGib code will award the item to the player.
+
+NOTE: My guess is that the Item ID being written out is overwriting whatever
+was last there for the ItemGib block.
+*/
 VOID CGameHook::itemGib(DWORD itemId) {
 
 	DWORD processId = GetCurrentProcessId();
@@ -255,6 +260,7 @@ VOID CGameHook::itemGib(DWORD itemId) {
 	char* littleEndianItemId = (char*)malloc(sizeof(DWORD));
 	ConvertToLittleEndianByteArray((uintptr_t)itemId, littleEndianItemId);
 
+	//Write out the new Item ID.
 	try {
 		DWORD memory = 0;
 		ReadProcessMemory(hProcess, (BYTE*)gibItem, &memory, sizeof(memory), nullptr);
@@ -266,6 +272,7 @@ VOID CGameHook::itemGib(DWORD itemId) {
 		Core->Logger("Cannot write the item to the memory");
 	}
 
+	//Trigger ItemGib to begin item awarding.
 	try {
 		typedef int func(void);
 		func* f = (func*)itemGibCodeAddress;

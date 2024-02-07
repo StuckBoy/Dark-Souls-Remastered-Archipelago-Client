@@ -59,8 +59,8 @@ VOID CItemRandomiser::RandomiseItem(UINT_PTR qWorldChrMan, UINT_PTR pItemBuffer,
 				dItemID = locationTargetItem;
 				Core->saveConfigFiles = true;
 			} else {
-				//The item is for another player, give a Prism
-				dItemID = 0x40000172;
+				//The item is for another player.
+				dItemID = 0x40000172; //Prism Stone
 			}
 			checkedLocationsList.push_front(pLocationsId[serverLocationIndex]);
 		} else {

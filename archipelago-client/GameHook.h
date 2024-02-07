@@ -88,6 +88,8 @@ private:
 		0xE9, 0x89, 0xE3, 0x3F, 0x00
 	};
 
+	//Search for array of bytes to find where this is injected
+	//TODO How to do this for DSR? Investigate DS3 and what exactly happens
 	BYTE ItemGibShellcode[93] =
 	{
 		0x48, 0x83, 0xEC, 0x48,
@@ -120,16 +122,25 @@ private:
 	};
 	*/
 
-
 	BYTE Blankerino[5] = {0x90, 0x90, 0x90, 0x90, 0x90};
 	BYTE DoublyBlankerino[6] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
 	//BYTE Jumperino[5] = {0xE9, 0xCC, 0x4E, 0xC0, 0xFF};
 	BYTE Jumperino[5] = {0xE9, 0xB2, 0x4E, 0xBE, 0xFF}; //13ffe0000
 
+	/**
+	The address in DS memory where we plan to store the item randomizer assembly
+	*/
 	long long itemRandomizerAddress = 0x140000010;
+	/**
+	The address in memory where the assembly to trigger item awards happens
+	*/
 	long long itemGibCodeAddress = 0x13ffe0000;
+	//Does nothing currently
 	long long itemGibDataCodeAddress = 0x140000168;
-
+	/**
+	The address in DS memory where we will jump to perform randomizer shenanigans
+	*/
+	long long dsJumpPoint = 0x1403fb149;
 };
 
 
@@ -153,8 +164,6 @@ public:
 		{ 0x400003EA, -1 }, //Titanite Chunk
 		{ 0x400003FC, -1 }, //Titanite Scale
 		{ 0x400003EB, -1 }, //Titanite Slab
-		{ 0x4000085D, -1 }, //Estus Shard
-		{ 0x4000085F, -1 }, //Undead Bone Shard
 		{ 0x40000124, -1 }, //Firebomb
 		{ 0x40000136, -1 }, //Throwing Knife
 		{ 0x40000190, -1 }, //Faded Soul
@@ -243,6 +252,27 @@ struct SEquipBuffer {
 	//TODO Verify if these work for DSR
 	char paddingBytes[0x60];
 };
+
+// Review this page for extern explanation -> https://www.geeksforgeeks.org/understanding-extern-keyword-in-c/
+/*
+	Assuming my understanding of this is correct, this is what the subsequent 
+	extern calls are doing:
+
+	1. qItemEquipComms - Currently unused. I think this relates to toggling
+		stat requirements or auto-equipping items
+	2. rItemRandomiser - Maps to the address where the ItemRandomizer is stored,
+		offset by the number of bytes used to create the hook.
+	3. tItemRandomiser() - TBD
+	4. fItemRandomizer(<stuff>) - Refers to the function defined in ItemRandomizer.
+		When called, it verifies the pointer received for item data is valid 
+		before deciding how to handle the item the player is interacting with.
+	5. rAutoEquip - Currently unused. Functionality to be implemented later
+	6. tAutoEquip - "" ^
+	7. fAutoEquip - "" ^
+	8. rNoWeaponsRequirements - "" ^
+	9. tNoWeaponsRequirements - "" ^
+	10. fNoWeaponsRequirements - "" ^
+*/
 
 extern "C" DWORD64 qItemEquipComms;
 
